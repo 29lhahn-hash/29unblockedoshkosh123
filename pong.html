@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pong - Vibe Games</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d090a;
+      color: #f3e9e3;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    h1 { margin-bottom: 8px; }
+    #score { margin-bottom: 12px; color: #d0c0b8; }
+    canvas {
+      border: 2px solid #cf3d33;
+      border-radius: 8px;
+      background: #1a1214;
+      box-shadow: 0 0 20px rgba(207,61,51,0.3);
+    }
+    .controls { margin-top: 14px; color: #d0c0b8; font-size: 0.9rem; text-align: center; }
+    a.back {
+      margin-top: 18px;
+      color: #cf3d33;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    a.back:hover { color: #e35248; }
+  </style>
+</head>
+<body>
+  <h1>Pong</h1>
+  <div id="score">You: 0 &nbsp;|&nbsp; CPU: 0</div>
+  <canvas id="game" width="480" height="320"></canvas>
+  <div class="controls">W / S or ↑ / ↓ to move paddle</div>
+  <a class="back" href="index.html">← Back to Vibe Games</a>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const paddleH = 70, paddleW = 10;
+    let playerY = 125, cpuY = 125;
+    let ballX = 240, ballY = 160, ballVX = 4, ballVY = 3;
+    let playerScore = 0, cpuScore = 0;
+    let keys = {};
+
+    document.addEventListener('keydown', e => keys[e.key] = true);
+    document.addEventListener('keyup', e => keys[e.key] = false);
+
+    function resetBall() {
+      ballX = canvas.width / 2;
+      ballY = canvas.height / 2;
+      ballVX = (Math.random() > 0.5 ? 1 : -1) * 4;
+      ballVY = (Math.random() * 4) - 2;
+    }
+
+    function update() {
+      // player
+      if ((keys['ArrowUp'] || keys['w'] || keys['W']) && playerY > 0) playerY -= 6;
+      if ((keys['ArrowDown'] || keys['s'] || keys['S']) && playerY < canvas.height - paddleH) playerY += 6;
+
+      // cpu
+      const cpuCenter = cpuY + paddleH / 2;
+      if (cpuCenter < ballY - 10) cpuY += 4;
+      else if (cpuCenter > ballY + 10) cpuY -= 4;
+      cpuY = Math.max(0, Math.min(canvas.height - paddleH, cpuY));
+
+      // ball
+      ballX += ballVX;
+      ballY += ballVY;
+
+      if (ballY <= 0 || ballY >= canvas.height) ballVY *= -1;
+
+      // player paddle
+      if (ballX <= 20 && ballY > playerY && ballY < playerY + paddleH) {
+        ballVX = Math.abs(ballVX) * 1.05;
+        ballVY += (ballY - (playerY + paddleH/2)) * 0.1;
+      }
+      // cpu paddle
+      if (ballX >= canvas.width - 20 && ballY > cpuY && ballY < cpuY + paddleH) {
+        ballVX = -Math.abs(ballVX) * 1.05;
+        ballVY += (ballY - (cpuY + paddleH/2)) * 0.1;
+      }
+
+      if (ballX < 0) {
+        cpuScore++;
+        document.getElementById('score').textContent = `You: ${playerScore}  |  CPU: ${cpuScore}`;
+        resetBall();
+      }
+      if (ballX > canvas.width) {
+        playerScore++;
+        document.getElementById('score').textContent = `You: ${playerScore}  |  CPU: ${cpuScore}`;
+        resetBall();
+      }
+    }
+
+    function draw() {
+      ctx.fillStyle = '#1a1214';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // center line
+      ctx.strokeStyle = '#3a282b';
+      ctx.setLineDash([8, 8]);
+      ctx.beginPath();
+      ctx.moveTo(canvas.width/2, 0);
+      ctx.lineTo(canvas.width/2, canvas.height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // paddles
+      ctx.fillStyle = '#cf3d33';
+      ctx.fillRect(10, playerY, paddleW, paddleH);
+      ctx.fillRect(canvas.width - 20, cpuY, paddleW, paddleH);
+
+      // ball
+      ctx.fillStyle = '#e59747';
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, 7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>
